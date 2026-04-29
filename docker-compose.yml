@@ -1,0 +1,63 @@
+services:
+  app:
+    platform: linux/amd64
+    build:
+      context: ./frontend
+      dockerfile: dockerfile
+    container_name: "b-frontend"
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: 'http://backend:8000/api'
+    networks:
+      - app-network
+    depends_on:
+      - backend
+  backend:
+      platform: linux/amd64
+      build:
+        context: ./backend/boilerplate/
+        dockerfile: dockerfile
+      restart: unless-stopped
+      container_name: "b-backend"
+      ports:
+        - '8000:8000'
+      environment:
+        DB_CONNECTION: pgsql
+        DB_HOST: db
+        DB_PORT: 5432
+        DB_DATABASE: app
+        DB_USERNAME: app
+        DB_PASSWORD: amine
+      networks:
+        - app-network
+      depends_on:
+        db:
+          condition: service_healthy
+  db:
+    image: postgres:latest
+    restart: unless-stopped
+    container_name: "b-db"
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: amine
+      POSTGRES_DB: app
+    ports:
+      - "5433:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    
+networks:
+  app-network:
+      driver: bridge
+volumes:
+  dbdata:

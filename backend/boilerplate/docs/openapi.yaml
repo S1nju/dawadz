@@ -1,0 +1,2097 @@
+openapi: 3.0.3
+info:
+  title: Pharmacy Marketplace API
+  version: 1.0.0
+  description: Laravel JSON API for a pharmacy marketplace.
+servers:
+  - url: /api
+security:
+  - bearerAuth: []
+tags:
+  - name: Public
+  - name: Auth
+  - name: ApprovalRequests
+  - name: Notifications
+  - name: Users
+  - name: Lookups
+  - name: Suppliers
+  - name: Products
+  - name: SupplierPosts
+  - name: Pharmacies
+  - name: Inventories
+  - name: Commandes
+  - name: Factures
+  - name: Medications
+  - name: MedicationActiveIngredients
+paths:
+  /:
+    get:
+      tags: [Public]
+      summary: API health check
+      responses:
+        '200':
+          description: API is working
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: API is working
+  /files/{path}:
+    get:
+      tags: [Public]
+      summary: Serve a public file asset
+      parameters:
+        - $ref: '#/components/parameters/path'
+      responses:
+        '200':
+          description: File response
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/AuthSuccess'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login and receive a Sanctum token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/AuthSuccess'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout current user
+      responses:
+        '200':
+          $ref: '#/components/responses/OkMessage'
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get authenticated user
+      responses:
+        '200':
+          $ref: '#/components/responses/UserResponse'
+  /auth/avatar:
+    post:
+      tags: [Auth]
+      summary: Upload or update user avatar
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          $ref: '#/components/responses/UserResponse'
+  /auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Change current password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/OkMessage'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /pharmacies/nearby:
+    get:
+      tags: [Public, Pharmacies]
+      summary: Search nearby pharmacies beyond 5 km by city or coordinates
+      security: []
+      parameters:
+        - in: query
+          name: city
+          required: false
+          schema:
+            type: string
+          description: Resolve nearby search center using the average coordinates of pharmacies in this city.
+        - in: query
+          name: latitude
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: longitude
+          required: false
+          schema:
+            type: number
+        - in: query
+          name: radius_km
+          required: false
+          schema:
+            type: number
+            default: 10
+        - in: query
+          name: medication_id
+          required: false
+          schema:
+            type: integer
+        - in: query
+          name: medication_name
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedPharmacyCollection'
+  /pharmacies:
+    get:
+      tags: [Public, Pharmacies]
+      summary: List public pharmacies
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedPharmacyCollection'
+    post:
+      tags: [Pharmacies]
+      summary: Create a pharmacy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PharmacyRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/PharmacyResponse'
+  /pharmacies/{pharmacy}:
+    get:
+      tags: [Public, Pharmacies]
+      summary: Show a public pharmacy
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/pharmacy'
+      responses:
+        '200':
+          $ref: '#/components/responses/PharmacyResponse'
+    put:
+      tags: [Pharmacies]
+      summary: Update a pharmacy
+      parameters:
+        - $ref: '#/components/parameters/pharmacy'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PharmacyRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/PharmacyResponse'
+    patch:
+      tags: [Pharmacies]
+      summary: Update a pharmacy
+      parameters:
+        - $ref: '#/components/parameters/pharmacy'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PharmacyRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/PharmacyResponse'
+    delete:
+      tags: [Pharmacies]
+      summary: Delete a pharmacy
+      parameters:
+        - $ref: '#/components/parameters/pharmacy'
+      responses:
+        '204':
+          description: No Content
+  /medications:
+    get:
+      tags: [Medications]
+      summary: List medications visible to the authenticated user
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedMedicationCollection'
+    post:
+      tags: [Medications]
+      summary: Create a medication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicationRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/MedicationResponse'
+  /medications/{medication}:
+    get:
+      tags: [Medications]
+      summary: Show a medication if owned by the authenticated user or admin
+      parameters:
+        - $ref: '#/components/parameters/medication'
+      responses:
+        '200':
+          $ref: '#/components/responses/MedicationResponse'
+    put:
+      tags: [Medications]
+      summary: Update a medication
+      parameters:
+        - $ref: '#/components/parameters/medication'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicationRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/MedicationResponse'
+    patch:
+      tags: [Medications]
+      summary: Update a medication
+      parameters:
+        - $ref: '#/components/parameters/medication'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicationRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/MedicationResponse'
+    delete:
+      tags: [Medications]
+      summary: Delete a medication
+      parameters:
+        - $ref: '#/components/parameters/medication'
+      responses:
+        '204':
+          description: No Content
+  /medications/{medication}/active-ingredients:
+    get:
+      tags: [MedicationActiveIngredients]
+      summary: List a medication's active ingredients
+      parameters:
+        - $ref: '#/components/parameters/medication'
+      responses:
+        '200':
+          $ref: '#/components/responses/MedicationActiveIngredientCollection'
+    post:
+      tags: [MedicationActiveIngredients]
+      summary: Attach an active ingredient to a medication
+      parameters:
+        - $ref: '#/components/parameters/medication'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicationActiveIngredientRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/MedicationActiveIngredientResponse'
+  /medications/{medication}/active-ingredients/{active_ingredient}:
+    get:
+      tags: [MedicationActiveIngredients]
+      summary: Show a medication active ingredient link
+      parameters:
+        - $ref: '#/components/parameters/medication'
+        - $ref: '#/components/parameters/active_ingredient'
+      responses:
+        '200':
+          $ref: '#/components/responses/MedicationActiveIngredientResponse'
+    put:
+      tags: [MedicationActiveIngredients]
+      summary: Update a medication active ingredient link
+      parameters:
+        - $ref: '#/components/parameters/medication'
+        - $ref: '#/components/parameters/active_ingredient'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicationActiveIngredientRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/MedicationActiveIngredientResponse'
+    patch:
+      tags: [MedicationActiveIngredients]
+      summary: Update a medication active ingredient link
+      parameters:
+        - $ref: '#/components/parameters/medication'
+        - $ref: '#/components/parameters/active_ingredient'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MedicationActiveIngredientRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/MedicationActiveIngredientResponse'
+    delete:
+      tags: [MedicationActiveIngredients]
+      summary: Detach an active ingredient from a medication
+      parameters:
+        - $ref: '#/components/parameters/medication'
+        - $ref: '#/components/parameters/active_ingredient'
+      responses:
+        '204':
+          description: No Content
+  /approval-requests:
+    get:
+      tags: [ApprovalRequests]
+      summary: List approval requests
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedApprovalRequestCollection'
+    post:
+      tags: [ApprovalRequests]
+      summary: Create an approval request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalRequestRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/ApprovalRequestResponse'
+  /approval-requests/{approval_request}:
+    get:
+      tags: [ApprovalRequests]
+      summary: Show an approval request
+      parameters:
+        - $ref: '#/components/parameters/approval_request'
+      responses:
+        '200':
+          $ref: '#/components/responses/ApprovalRequestResponse'
+    put:
+      tags: [ApprovalRequests]
+      summary: Update a pending approval request
+      parameters:
+        - $ref: '#/components/parameters/approval_request'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalRequestRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ApprovalRequestResponse'
+    patch:
+      tags: [ApprovalRequests]
+      summary: Update a pending approval request
+      parameters:
+        - $ref: '#/components/parameters/approval_request'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalRequestRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ApprovalRequestResponse'
+    delete:
+      tags: [ApprovalRequests]
+      summary: Delete an approval request
+      parameters:
+        - $ref: '#/components/parameters/approval_request'
+      responses:
+        '204':
+          description: No Content
+  /approval-requests/{approval_request}/status:
+    patch:
+      tags: [ApprovalRequests]
+      summary: Accept or reject an approval request
+      parameters:
+        - $ref: '#/components/parameters/approval_request'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [accepted, rejected, pending]
+                review_notes:
+                  type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/ApprovalRequestResponse'
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: List notifications
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedNotificationCollection'
+  /notifications/{notification}:
+    get:
+      tags: [Notifications]
+      summary: Show a notification
+      parameters:
+        - $ref: '#/components/parameters/notification'
+      responses:
+        '200':
+          $ref: '#/components/responses/NotificationResponse'
+    delete:
+      tags: [Notifications]
+      summary: Delete a notification
+      parameters:
+        - $ref: '#/components/parameters/notification'
+      responses:
+        '204':
+          description: No Content
+  /notifications/{notification}/read:
+    patch:
+      tags: [Notifications]
+      summary: Mark notification as read
+      parameters:
+        - $ref: '#/components/parameters/notification'
+      responses:
+        '200':
+          $ref: '#/components/responses/NotificationResponse'
+  /users:
+    get:
+      tags: [Users]
+      summary: List all users with optional role and text filters
+      parameters:
+        - in: query
+          name: q
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: role
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: roles[]
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedUserCollection'
+    post:
+      tags: [Users]
+      summary: Create a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/UserResponse'
+  /users/{user}:
+    get:
+      tags: [Users]
+      summary: Show a user
+      parameters:
+        - $ref: '#/components/parameters/user'
+      responses:
+        '200':
+          $ref: '#/components/responses/UserResponse'
+    put:
+      tags: [Users]
+      summary: Update a user
+      parameters:
+        - $ref: '#/components/parameters/user'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/UserResponse'
+    patch:
+      tags: [Users]
+      summary: Update a user
+      parameters:
+        - $ref: '#/components/parameters/user'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/UserResponse'
+    delete:
+      tags: [Users]
+      summary: Delete a user
+      parameters:
+        - $ref: '#/components/parameters/user'
+      responses:
+        '204':
+          description: No Content
+  /laboratories:
+    get:
+      tags: [Lookups]
+      summary: List laboratories owned by the current pharmacy admin
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedLookupCollection'
+    post:
+      tags: [Lookups]
+      summary: Create a laboratory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LaboratoryRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/LookupResponse'
+  /laboratories/{laboratory}:
+    get:
+      tags: [Lookups]
+      summary: Show a laboratory owned by the current pharmacy admin
+      parameters:
+        - $ref: '#/components/parameters/laboratory'
+      responses:
+        '200':
+          $ref: '#/components/responses/LookupResponse'
+    put:
+      tags: [Lookups]
+      summary: Update a laboratory
+      parameters:
+        - $ref: '#/components/parameters/laboratory'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LaboratoryRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/LookupResponse'
+    patch:
+      tags: [Lookups]
+      summary: Update a laboratory
+      parameters:
+        - $ref: '#/components/parameters/laboratory'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LaboratoryRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/LookupResponse'
+    delete:
+      tags: [Lookups]
+      summary: Delete a laboratory
+      parameters:
+        - $ref: '#/components/parameters/laboratory'
+      responses:
+        '204':
+          description: No Content
+  /therapeutic-classes:
+    get:
+      tags: [Lookups]
+      summary: List therapeutic classes owned by the current pharmacy admin
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedLookupCollection'
+    post:
+      tags: [Lookups]
+      summary: Create a therapeutic class
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LookupNameDescriptionRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/LookupResponse'
+  /therapeutic-classes/{therapeutic_class}:
+    get:
+      tags: [Lookups]
+      summary: Show a therapeutic class
+      parameters:
+        - $ref: '#/components/parameters/therapeutic_class'
+      responses:
+        '200':
+          $ref: '#/components/responses/LookupResponse'
+    put:
+      tags: [Lookups]
+      summary: Update a therapeutic class
+      parameters:
+        - $ref: '#/components/parameters/therapeutic_class'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LookupNameDescriptionRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/LookupResponse'
+    patch:
+      tags: [Lookups]
+      summary: Update a therapeutic class
+      parameters:
+        - $ref: '#/components/parameters/therapeutic_class'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LookupNameDescriptionRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/LookupResponse'
+    delete:
+      tags: [Lookups]
+      summary: Delete a therapeutic class
+      parameters:
+        - $ref: '#/components/parameters/therapeutic_class'
+      responses:
+        '204':
+          description: No Content
+  /pharmacological-classes:
+    get:
+      tags: [Lookups]
+      summary: List pharmacological classes owned by the current pharmacy admin
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedLookupCollection'
+    post:
+      tags: [Lookups]
+      summary: Create a pharmacological class
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LookupNameDescriptionRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/LookupResponse'
+  /pharmacological-classes/{pharmacological_class}:
+    get:
+      tags: [Lookups]
+      summary: Show a pharmacological class
+      parameters:
+        - $ref: '#/components/parameters/pharmacological_class'
+      responses:
+        '200':
+          $ref: '#/components/responses/LookupResponse'
+    put:
+      tags: [Lookups]
+      summary: Update a pharmacological class
+      parameters:
+        - $ref: '#/components/parameters/pharmacological_class'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LookupNameDescriptionRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/LookupResponse'
+    patch:
+      tags: [Lookups]
+      summary: Update a pharmacological class
+      parameters:
+        - $ref: '#/components/parameters/pharmacological_class'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LookupNameDescriptionRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/LookupResponse'
+    delete:
+      tags: [Lookups]
+      summary: Delete a pharmacological class
+      parameters:
+        - $ref: '#/components/parameters/pharmacological_class'
+      responses:
+        '204':
+          description: No Content
+  /active-ingredients:
+    get:
+      tags: [Lookups]
+      summary: List active ingredients owned by the current pharmacy admin
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedLookupCollection'
+    post:
+      tags: [Lookups]
+      summary: Create an active ingredient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActiveIngredientRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/LookupResponse'
+  /active-ingredients/{active_ingredient}:
+    get:
+      tags: [Lookups]
+      summary: Show an active ingredient
+      parameters:
+        - $ref: '#/components/parameters/active_ingredient'
+      responses:
+        '200':
+          $ref: '#/components/responses/LookupResponse'
+    put:
+      tags: [Lookups]
+      summary: Update an active ingredient
+      parameters:
+        - $ref: '#/components/parameters/active_ingredient'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActiveIngredientRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/LookupResponse'
+    patch:
+      tags: [Lookups]
+      summary: Update an active ingredient
+      parameters:
+        - $ref: '#/components/parameters/active_ingredient'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActiveIngredientRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/LookupResponse'
+    delete:
+      tags: [Lookups]
+      summary: Delete an active ingredient
+      parameters:
+        - $ref: '#/components/parameters/active_ingredient'
+      responses:
+        '204':
+          description: No Content
+  /pharmaceutical-forms:
+    get:
+      tags: [Lookups]
+      summary: List pharmaceutical forms owned by the current pharmacy admin
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedLookupCollection'
+    post:
+      tags: [Lookups]
+      summary: Create a pharmaceutical form
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PharmaceuticalFormRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/LookupResponse'
+  /pharmaceutical-forms/{pharmaceutical_form}:
+    get:
+      tags: [Lookups]
+      summary: Show a pharmaceutical form
+      parameters:
+        - $ref: '#/components/parameters/pharmaceutical_form'
+      responses:
+        '200':
+          $ref: '#/components/responses/LookupResponse'
+    put:
+      tags: [Lookups]
+      summary: Update a pharmaceutical form
+      parameters:
+        - $ref: '#/components/parameters/pharmaceutical_form'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PharmaceuticalFormRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/LookupResponse'
+    patch:
+      tags: [Lookups]
+      summary: Update a pharmaceutical form
+      parameters:
+        - $ref: '#/components/parameters/pharmaceutical_form'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PharmaceuticalFormRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/LookupResponse'
+    delete:
+      tags: [Lookups]
+      summary: Delete a pharmaceutical form
+      parameters:
+        - $ref: '#/components/parameters/pharmaceutical_form'
+      responses:
+        '204':
+          description: No Content
+  /countries:
+    get:
+      tags: [Lookups]
+      summary: List countries owned by the current pharmacy admin
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedLookupCollection'
+    post:
+      tags: [Lookups]
+      summary: Create a country
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CountryRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/LookupResponse'
+  /countries/{country}:
+    get:
+      tags: [Lookups]
+      summary: Show a country
+      parameters:
+        - $ref: '#/components/parameters/country'
+      responses:
+        '200':
+          $ref: '#/components/responses/LookupResponse'
+    put:
+      tags: [Lookups]
+      summary: Update a country
+      parameters:
+        - $ref: '#/components/parameters/country'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CountryRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/LookupResponse'
+    patch:
+      tags: [Lookups]
+      summary: Update a country
+      parameters:
+        - $ref: '#/components/parameters/country'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CountryRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/LookupResponse'
+    delete:
+      tags: [Lookups]
+      summary: Delete a country
+      parameters:
+        - $ref: '#/components/parameters/country'
+      responses:
+        '204':
+          description: No Content
+  /suppliers:
+    get:
+      tags: [Suppliers]
+      summary: List suppliers
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedSupplierCollection'
+    post:
+      tags: [Suppliers]
+      summary: Create a supplier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplierRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/SupplierResponse'
+  /suppliers/{supplier}:
+    get:
+      tags: [Suppliers]
+      summary: Show a supplier
+      parameters:
+        - $ref: '#/components/parameters/supplier'
+      responses:
+        '200':
+          $ref: '#/components/responses/SupplierResponse'
+    put:
+      tags: [Suppliers]
+      summary: Update a supplier
+      parameters:
+        - $ref: '#/components/parameters/supplier'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplierRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SupplierResponse'
+    patch:
+      tags: [Suppliers]
+      summary: Update a supplier
+      parameters:
+        - $ref: '#/components/parameters/supplier'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplierRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SupplierResponse'
+    delete:
+      tags: [Suppliers]
+      summary: Delete a supplier
+      parameters:
+        - $ref: '#/components/parameters/supplier'
+      responses:
+        '204':
+          description: No Content
+  /products:
+    get:
+      tags: [Products]
+      summary: List products
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedProductCollection'
+    post:
+      tags: [Products]
+      summary: Create a product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/ProductResponse'
+  /products/{product}:
+    get:
+      tags: [Products]
+      summary: Show a product
+      parameters:
+        - $ref: '#/components/parameters/product'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductResponse'
+    put:
+      tags: [Products]
+      summary: Update a product
+      parameters:
+        - $ref: '#/components/parameters/product'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductResponse'
+    patch:
+      tags: [Products]
+      summary: Update a product
+      parameters:
+        - $ref: '#/components/parameters/product'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductResponse'
+    delete:
+      tags: [Products]
+      summary: Delete a product
+      parameters:
+        - $ref: '#/components/parameters/product'
+      responses:
+        '204':
+          description: No Content
+  /supplier-posts:
+    get:
+      tags: [SupplierPosts]
+      summary: List supplier posts for admin, pharmacy admins, and supplier admins
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedSupplierPostCollection'
+    post:
+      tags: [SupplierPosts]
+      summary: Create a supplier post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplierPostRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/SupplierPostResponse'
+  /supplier-posts/{supplier_post}:
+    get:
+      tags: [SupplierPosts]
+      summary: Show a supplier post
+      parameters:
+        - $ref: '#/components/parameters/supplier_post'
+      responses:
+        '200':
+          $ref: '#/components/responses/SupplierPostResponse'
+    put:
+      tags: [SupplierPosts]
+      summary: Update a supplier post
+      parameters:
+        - $ref: '#/components/parameters/supplier_post'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplierPostRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SupplierPostResponse'
+    patch:
+      tags: [SupplierPosts]
+      summary: Update a supplier post
+      parameters:
+        - $ref: '#/components/parameters/supplier_post'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplierPostRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SupplierPostResponse'
+    delete:
+      tags: [SupplierPosts]
+      summary: Delete a supplier post
+      parameters:
+        - $ref: '#/components/parameters/supplier_post'
+      responses:
+        '204':
+          description: No Content
+  /inventories:
+    get:
+      tags: [Inventories]
+      summary: List inventories
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedInventoryCollection'
+    post:
+      tags: [Inventories]
+      summary: Create an inventory line
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/InventoryResponse'
+  /inventories/{inventory}:
+    get:
+      tags: [Inventories]
+      summary: Show an inventory line
+      parameters:
+        - $ref: '#/components/parameters/inventory'
+      responses:
+        '200':
+          $ref: '#/components/responses/InventoryResponse'
+    put:
+      tags: [Inventories]
+      summary: Update an inventory line
+      parameters:
+        - $ref: '#/components/parameters/inventory'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/InventoryResponse'
+    patch:
+      tags: [Inventories]
+      summary: Update an inventory line
+      parameters:
+        - $ref: '#/components/parameters/inventory'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/InventoryResponse'
+    delete:
+      tags: [Inventories]
+      summary: Delete an inventory line
+      parameters:
+        - $ref: '#/components/parameters/inventory'
+      responses:
+        '204':
+          description: No Content
+  /commandes:
+    get:
+      tags: [Commandes]
+      summary: List commandes
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedCommandeCollection'
+    post:
+      tags: [Commandes]
+      summary: Create a commande with embedded lines
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandeRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/CommandeResponse'
+  /commandes/{commande}:
+    get:
+      tags: [Commandes]
+      summary: Show a commande
+      parameters:
+        - $ref: '#/components/parameters/commande'
+      responses:
+        '200':
+          $ref: '#/components/responses/CommandeResponse'
+    put:
+      tags: [Commandes]
+      summary: Update a commande
+      parameters:
+        - $ref: '#/components/parameters/commande'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandeRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/CommandeResponse'
+    patch:
+      tags: [Commandes]
+      summary: Update a commande
+      parameters:
+        - $ref: '#/components/parameters/commande'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandeRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/CommandeResponse'
+    delete:
+      tags: [Commandes]
+      summary: Delete a commande
+      parameters:
+        - $ref: '#/components/parameters/commande'
+      responses:
+        '204':
+          description: No Content
+  /commandes/{commande}/confirm:
+    patch:
+      tags: [Commandes]
+      summary: Confirm a commande
+      parameters:
+        - $ref: '#/components/parameters/commande'
+      responses:
+        '200':
+          $ref: '#/components/responses/CommandeResponse'
+  /commandes/{commande}/refuse:
+    patch:
+      tags: [Commandes]
+      summary: Refuse a commande
+      parameters:
+        - $ref: '#/components/parameters/commande'
+      responses:
+        '200':
+          $ref: '#/components/responses/CommandeResponse'
+  /factures:
+    get:
+      tags: [Factures]
+      summary: List factures
+      responses:
+        '200':
+          $ref: '#/components/responses/PaginatedFactureCollection'
+    post:
+      tags: [Factures]
+      summary: Create a facture with embedded lines
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FactureRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/FactureResponse'
+  /factures/{facture}:
+    get:
+      tags: [Factures]
+      summary: Show a facture
+      parameters:
+        - $ref: '#/components/parameters/facture'
+      responses:
+        '200':
+          $ref: '#/components/responses/FactureResponse'
+    put:
+      tags: [Factures]
+      summary: Update a facture
+      parameters:
+        - $ref: '#/components/parameters/facture'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FactureRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/FactureResponse'
+    patch:
+      tags: [Factures]
+      summary: Update a facture
+      parameters:
+        - $ref: '#/components/parameters/facture'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FactureRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/FactureResponse'
+    delete:
+      tags: [Factures]
+      summary: Delete a facture
+      parameters:
+        - $ref: '#/components/parameters/facture'
+      responses:
+        '204':
+          description: No Content
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Sanctum
+  parameters:
+    path:
+      in: path
+      name: path
+      required: true
+      schema:
+        type: string
+    pharmacy:
+      in: path
+      name: pharmacy
+      required: true
+      schema:
+        type: integer
+    medication:
+      in: path
+      name: medication
+      required: true
+      schema:
+        type: integer
+    approval_request:
+      in: path
+      name: approval_request
+      required: true
+      schema:
+        type: integer
+    notification:
+      in: path
+      name: notification
+      required: true
+      schema:
+        type: integer
+    user:
+      in: path
+      name: user
+      required: true
+      schema:
+        type: integer
+    laboratory:
+      in: path
+      name: laboratory
+      required: true
+      schema:
+        type: integer
+    therapeutic_class:
+      in: path
+      name: therapeutic_class
+      required: true
+      schema:
+        type: integer
+    pharmacological_class:
+      in: path
+      name: pharmacological_class
+      required: true
+      schema:
+        type: integer
+    active_ingredient:
+      in: path
+      name: active_ingredient
+      required: true
+      schema:
+        type: integer
+    pharmaceutical_form:
+      in: path
+      name: pharmaceutical_form
+      required: true
+      schema:
+        type: integer
+    country:
+      in: path
+      name: country
+      required: true
+      schema:
+        type: integer
+    supplier:
+      in: path
+      name: supplier
+      required: true
+      schema:
+        type: integer
+    product:
+      in: path
+      name: product
+      required: true
+      schema:
+        type: integer
+    supplier_post:
+      in: path
+      name: supplier_post
+      required: true
+      schema:
+        type: integer
+    inventory:
+      in: path
+      name: inventory
+      required: true
+      schema:
+        type: integer
+    commande:
+      in: path
+      name: commande
+      required: true
+      schema:
+        type: integer
+    facture:
+      in: path
+      name: facture
+      required: true
+      schema:
+        type: integer
+  responses:
+    OkMessage:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+    AuthSuccess:
+      description: Authentication success
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthResponse'
+    UserResponse:
+      description: Authenticated user
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
+    LookupResponse:
+      description: Lookup model response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LookupModel'
+    SupplierResponse:
+      description: Supplier response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Supplier'
+    ProductResponse:
+      description: Product response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Product'
+    SupplierPostResponse:
+      description: Supplier post response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SupplierPost'
+    PharmacyResponse:
+      description: Pharmacy response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Pharmacy'
+    InventoryResponse:
+      description: Inventory response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Inventory'
+    CommandeResponse:
+      description: Commande response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Commande'
+    FactureResponse:
+      description: Facture response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Facture'
+    ApprovalRequestResponse:
+      description: Approval request response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApprovalRequest'
+    NotificationResponse:
+      description: Notification response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Notification'
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              errors:
+                type: object
+    NotFound:
+      description: Not found
+    PaginatedLookupCollection:
+      description: Paginated lookup collection
+    PaginatedSupplierCollection:
+      description: Paginated supplier collection
+    PaginatedProductCollection:
+      description: Paginated product collection
+    PaginatedSupplierPostCollection:
+      description: Paginated supplier post collection
+    PaginatedPharmacyCollection:
+      description: Paginated pharmacy collection
+    PaginatedMedicationCollection:
+      description: Paginated medication collection
+    PaginatedInventoryCollection:
+      description: Paginated inventory collection
+    PaginatedCommandeCollection:
+      description: Paginated commande collection
+    PaginatedFactureCollection:
+      description: Paginated facture collection
+    PaginatedApprovalRequestCollection:
+      description: Paginated approval request collection
+    PaginatedNotificationCollection:
+      description: Paginated notification collection
+    PaginatedUserCollection:
+      description: Paginated user collection
+    MedicationActiveIngredientCollection:
+      description: Medication active ingredient collection
+    MedicationActiveIngredientResponse:
+      description: Medication active ingredient response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MedicationActiveIngredient'
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        token_type:
+          type: string
+          example: Bearer
+        user:
+          $ref: '#/components/schemas/User'
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone_number:
+          type: string
+          nullable: true
+        roles:
+          type: array
+          items:
+            type: object
+    UserCreateRequest:
+      type: object
+      required: [name, email, password, password_confirmation]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone_number:
+          type: string
+          nullable: true
+        password:
+          type: string
+        password_confirmation:
+          type: string
+        role:
+          type: string
+          nullable: true
+        roles:
+          type: array
+          nullable: true
+          items:
+            type: string
+    UserUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone_number:
+          type: string
+          nullable: true
+        password:
+          type: string
+          nullable: true
+        password_confirmation:
+          type: string
+        role:
+          type: string
+          nullable: true
+        roles:
+          type: array
+          nullable: true
+          items:
+            type: string
+    RegisterRequest:
+      type: object
+      required: [name, email, password, password_confirmation]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        password_confirmation:
+          type: string
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    ChangePasswordRequest:
+      type: object
+      required: [current_password, password, password_confirmation]
+      properties:
+        current_password:
+          type: string
+        password:
+          type: string
+        password_confirmation:
+          type: string
+    ApprovalRequestRequest:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [pharmacy, supplier]
+        documents:
+          type: array
+          items:
+            type: string
+        images:
+          type: array
+          items:
+            type: string
+    ApprovalRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        type:
+          type: string
+        status:
+          type: string
+        documents:
+          type: array
+          items:
+            type: string
+        images:
+          type: array
+          items:
+            type: string
+        reviewed_by:
+          type: integer
+          nullable: true
+        reviewed_at:
+          type: string
+          nullable: true
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        body:
+          type: string
+        is_read:
+          type: boolean
+    LookupNameDescriptionRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+    ActiveIngredientRequest:
+      type: object
+      required: [dci, dci_code]
+      properties:
+        dci:
+          type: string
+        dci_code:
+          type: string
+    LaboratoryRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        country:
+          type: string
+          nullable: true
+    PharmaceuticalFormRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+    CountryRequest:
+      type: object
+      required: [name, code]
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+          minLength: 3
+          maxLength: 3
+    LookupModel:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        created_by:
+          type: integer
+          nullable: true
+    MedicationRequest:
+      type: object
+      required: [name, laboratory_id, pharmaceutical_form_id]
+      properties:
+        name:
+          type: string
+        commercial_name:
+          type: string
+          nullable: true
+        laboratory_id:
+          type: integer
+        therapeutic_class_id:
+          type: integer
+          nullable: true
+        pharmacological_class_id:
+          type: integer
+          nullable: true
+        pharmaceutical_form_id:
+          type: integer
+        country_id:
+          type: integer
+          nullable: true
+        dosage:
+          type: string
+          nullable: true
+        conditioning:
+          type: string
+          nullable: true
+        type:
+          type: string
+          enum: [generic, brand, biosimilar, herbal]
+        list:
+          type: string
+          enum: [list_i, list_ii, list_iii, free]
+        marketed:
+          type: boolean
+        reimbursable:
+          type: boolean
+        registration_num:
+          type: string
+          nullable: true
+        notice_link:
+          type: string
+          nullable: true
+        img_link:
+          type: string
+          nullable: true
+    Medication:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        commercial_name:
+          type: string
+          nullable: true
+        created_by:
+          type: integer
+          nullable: true
+    MedicationActiveIngredientRequest:
+      type: object
+      required: [active_ingredient_id]
+      properties:
+        active_ingredient_id:
+          type: integer
+        strength:
+          type: string
+          nullable: true
+    MedicationActiveIngredient:
+      type: object
+      properties:
+        id:
+          type: integer
+        medication_id:
+          type: integer
+        active_ingredient_id:
+          type: integer
+        strength:
+          type: string
+          nullable: true
+    SupplierRequest:
+              tags: [Medications]
+              summary: List medications visible to the authenticated user
+      properties:
+        company_name:
+          type: string
+        address:
+          type: string
+    Supplier:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        company_name:
+          type: string
+        address:
+          type: string
+    ProductRequest:
+      type: object
+      required: [supplier_id, medication_id]
+      properties:
+        supplier_id:
+          type: integer
+        medication_id:
+          type: integer
+        qte:
+          type: integer
+        prix_achat:
+          type: number
+        prix_vente:
+          type: number
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+        supplier_id:
+          type: integer
+        medication_id:
+          type: integer
+        qte:
+          type: integer
+    SupplierPostRequest:
+      type: object
+      required: [supplier_id, product_id, title]
+      properties:
+        supplier_id:
+          type: integer
+        product_id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        image:
+          type: string
+          nullable: true
+        qte_vente:
+          type: integer
+          nullable: true
+    SupplierPost:
+      type: object
+      properties:
+        id:
+          type: integer
+        supplier_id:
+          type: integer
+        product_id:
+          type: integer
+        title:
+          type: string
+    PharmacyRequest:
+      type: object
+      required: [name, address]
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        registre_commerce_number:
+          type: string
+        time_open:
+          type: string
+        time_closes:
+          type: string
+    Pharmacy:
+      type: object
+      properties:
+        id:
+          type: integer
+        owner_id:
+          type: integer
+        name:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+    InventoryRequest:
+      type: object
+      required: [pharmacy_id, medication_id]
+      properties:
+        pharmacy_id:
+          type: integer
+        medication_id:
+          type: integer
+        qte:
+          type: integer
+        prix_achat:
+          type: number
+        prix_vente:
+          type: number
+    Inventory:
+      type: object
+      properties:
+        id:
+          type: integer
+        pharmacy_id:
+          type: integer
+        medication_id:
+          type: integer
+    CommandeRequest:
+      type: object
+      required: [supplier_id, lines]
+      properties:
+        supplier_id:
+          type: integer
+        external_supplier_name:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        lines:
+          type: array
+          items:
+            type: object
+            required: [product_id, medication_name, qte, unit_price]
+            properties:
+              product_id:
+                type: integer
+              medication_name:
+                type: string
+              qte:
+                type: integer
+              unit_price:
+                type: number
+    Commande:
+      type: object
+      properties:
+        id:
+          type: integer
+        supplier_id:
+          type: integer
+        status:
+          type: string
+    FactureRequest:
+      type: object
+      required: [commande_id, supplier_id, lines]
+      properties:
+        commande_id:
+          type: integer
+        supplier_id:
+            tags: [Medications]
+            summary: Show a medication if owned by the authenticated user or admin
+          type: array
+          items:
+            type: object
+            required: [product_id, medication_name, qte, unit_price]
+            properties:
+              product_id:
+                type: integer
+              medication_name:
+                type: string
+              qte:
+                type: integer
+              unit_price:
+                type: number
+    Facture:
+      type: object
+      properties:
+        id:
+          type: integer
+        commande_id:
+          type: integer
+        supplier_id:
+          type: integer
+        total_ht:
+          type: number
+        total_ttc:
+          type: number
+  examples: {}

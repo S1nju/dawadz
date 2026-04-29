@@ -1,0 +1,31 @@
+FROM --platform=linux/amd64 php:8.2-cli
+
+WORKDIR /var/www
+
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    zip \
+    unzip \
+    libpq-dev
+
+RUN docker-php-ext-install pdo pdo_pgsql
+
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+COPY . .
+
+RUN composer install --no-dev --optimize-autoloader
+
+# Copy .env or create from example
+RUN cp .env.example .env || true
+
+# Generate app key
+RUN php artisan key:generate
+
+EXPOSE 8000
+
+CMD php artisan serve --host=0.0.0.0 --port=8000
