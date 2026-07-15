@@ -340,8 +340,9 @@ Dawadz was developed during the **Muhandis Hackathon**, where it earned **Second
 # 👥 Contributors
 
 - **Anes Bouhaik**
-- **Muhandis Hackathon Team**
-
+- **Harir Mahmoud**
+- **Bekada issam**
+- - **ezzerbouti abdelhak**
 ---
 
 # 📄 License
