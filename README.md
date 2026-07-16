@@ -204,9 +204,9 @@ erDiagram
 | Backend | Laravel |
 | Database | PostgreSQL |
 | Geospatial | PostGIS |
-| Authentication | Laravel Authentication |
+| Authentication | Laravel Sanctum |
 | APIs | RESTful API |
-| AI | OpenAI API |
+| AI | QWEN API |
 
 ---
 
